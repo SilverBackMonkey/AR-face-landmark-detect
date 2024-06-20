@@ -4,6 +4,7 @@ import useFaceDetect from "../hooks/useFaceDetect";
 import { DrawingUtils, FaceLandmarker } from "@mediapipe/tasks-vision";
 import { lowerLipIds, upperLipIds } from "../constants/constants";
 import { useSelector } from "react-redux";
+import LoadingButton from "./LoadingButton";
 
 const ImageLoad = () => {
     const rougeColor = useSelector((state) => state.color.value);
@@ -25,6 +26,7 @@ const ImageLoad = () => {
 
     const detectLip = (e) => {
         e.preventDefault();
+        if (!faceLandMarker) return;
         // validate rougeColor
         if (!rougeColor) {
             alert("Please select a color !");
@@ -40,6 +42,7 @@ const ImageLoad = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     const drawLip = () => {
+        if ( !canvasRef.current || !faceLandmarkerResult ) return;
         const canvas = canvasRef.current;
         const imageElement = imageRef.current;
         canvas.setAttribute("class", "canvas absolute");
@@ -50,10 +53,11 @@ const ImageLoad = () => {
         canvas.style.width = `${imageElement.width}px`;
         canvas.style.height = `${imageElement.height}px`;
         const ctx = canvas.getContext("2d");
+
         for (const landmarks of faceLandmarkerResult.faceLandmarks) {
             // console.log(landmarks);
             // Draw upper lip
-            ctx.fillStyle = `${rougeColor}60`; // Red color with 50% opacity
+            ctx.fillStyle = `${rougeColor}80`; // Red color with 50% opacity
             ctx.beginPath();
             upperLipIds.forEach((id, index) => {
                 const x = landmarks[id].x * canvasRef.current.width;
@@ -172,6 +176,8 @@ const ImageLoad = () => {
         ctx.fillStyle = "rgba(0, 0, 0, 0)";
     }
 
+    document.addEventListener("resize", drawLip());
+
     useEffect(() => {
         if( imageRef.current )
             imageRef.current.src = selectedFile;
@@ -180,7 +186,7 @@ const ImageLoad = () => {
 
     return (
         <div>
-            <div className="mx-auto w-1/3 max-h-120 min-height-60 border-dashed border-2 border-indigo-600">
+            <div className="mx-auto w-2/3 max-h-120 min-height-60 border-dashed border-2 border-indigo-600">
                 <div className="w-1/2 h-1/2 mx-auto py-20">
                     <div className="relative">
                         {!selectedFile && <div className="py-40" width={640} height={380}>Please select your avatar...</div>}
@@ -189,13 +195,13 @@ const ImageLoad = () => {
                             <img src={selectedFile} style={{width: '640px'}} alt="avatar" ref={imageRef}/>
                         </div>
                         }
-                    </div>    
+                    </div>
                 </div>
                 <p className="mt-4  text-xs leading-5 text-current">
                     PNG, JPG, GIF Files...
                 </p>
             </div>
-            <div className="mt-8 text-xs leading-5 text-current">
+            <div className="mt-8 text-xs leading-5 text-white">
                 <label
                     htmlFor="file-upload"
                     className="relative cursor-pointer bg-red-700 hover:bg-red-800 focus:outline-none focus:ring-4 focus:ring-red-300 font-medium rounded-full text-sm px-5 py-2.5 text-center me-2 mb-2 dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-900">
@@ -211,10 +217,16 @@ const ImageLoad = () => {
                         className="sr-only"
                         onChange={onSelectFile}/>
                 </label>
-                <button 
-                    className={`${selectedFile ? 'cursor-pointer': 'cursor-not-allowed'} bg-red-700 hover:bg-red-800 focus:outline-none font-medium rounded-full text-sm px-5 py-2.5 text-center me-2 mb-2 dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-900`}
-                    disabled={selectedFile ? false: true}
-                    onClick={detectLip}>Show Result</button>
+
+                <LoadingButton 
+                    label="Show Result"
+                    handleClick={detectLip}
+                    loadingLabel="Loading AI model" 
+                    // loading={faceLandMarker ? false: true}
+                    loading={true}
+                    disable={(faceLandMarker && selectedFile) ? false: true}
+                    classList={`${selectedFile ? 'cursor-pointer': 'cursor-not-allowed'} bg-red-700 hover:bg-red-800 focus:outline-none font-medium rounded-full text-sm px-5 py-2.5 text-center me-2 mb-2 dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-900`} 
+                />
             </div>
         </div>
         
